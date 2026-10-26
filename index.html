@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIM-Skripsi - Sistem Manajemen Bimbingan Skripsi Cloud</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+        }
+        .print-only { display: none; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-50">
+
+    <!-- TOPBAR / NAVBAR HEADER -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo & System Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-blue-500/20">
+                        <i class="fa-solid fa-graduation-cap text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">SIM-Skripsi</span>
+                        <span id="envBadge" class="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 bg-amber-50 text-amber-700 font-semibold rounded-full border border-amber-200">
+                            <i class="fa-solid fa-hard-drive mr-1"></i> Local Storage Mode
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Config & Profile Section -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="openModal('modalFirebaseConfig')" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 border border-slate-200">
+                        <i class="fa-solid fa-fire text-amber-500"></i>
+                        <span class="hidden md:inline">Setup Firebase Backend</span>
+                    </button>
+
+                    <!-- User Profile & Logout (When Authenticated) -->
+                    <div id="navUserProfile" class="hidden flex items-center space-x-3 border-l pl-3 border-slate-200">
+                        <div class="flex items-center space-x-2">
+                            <img id="navAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-blue-500/30">
+                            <div class="hidden lg:block text-left">
+                                <div id="navUserName" class="text-xs font-bold text-slate-800 leading-none">User Name</div>
+                                <div id="navUserRole" class="text-[10px] text-blue-600 font-medium capitalize mt-0.5">Role</div>
+                            </div>
+                        </div>
+                        <button onclick="handleLogout()" title="Keluar dari Sistem" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NOTIFICATION ALERT CONTAINER -->
+    <div id="toastContainer" class="fixed top-20 right-5 z-50 flex flex-col space-y-2 no-print"></div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 no-print">
+
+        <!-- AUTH SECTION: LOGIN / REGISTER CONTAINER -->
+        <div id="viewAuth" class="max-w-xl mx-auto py-8">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+                <!-- Auth Toggle Tabs -->
+                <div class="flex border-b border-slate-200 bg-slate-50/50 p-1.5 gap-1">
+                    <button id="btnTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2.5 text-xs font-bold rounded-2xl bg-white text-blue-700 shadow-sm transition">
+                        <i class="fa-solid fa-right-to-bracket mr-1.5"></i> Masuk Akun
+                    </button>
+                    <button id="btnTabRegister" onclick="switchAuthTab('register')" class="flex-1 py-2.5 text-xs font-bold rounded-2xl text-slate-500 hover:text-slate-800 transition">
+                        <i class="fa-solid fa-user-plus mr-1.5"></i> Pendaftaran Mandiri
+                    </button>
+                </div>
+
+                <!-- FORM LOGIN -->
+                <div id="formLoginContainer" class="p-6 sm:p-8 space-y-5">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-slate-800">Selamat Datang Kembali</h2>
+                        <p class="text-xs text-slate-500 mt-1">Masukan Email dan Password terdaftar Anda</p>
+                    </div>
+
+                    <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Email Akademik</label>
+                            <input type="email" id="loginEmail" required placeholder="nama@univ.ac.id" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Kata Sandi (Password)</label>
+                            <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition">
+                            Masuk ke Portal SIM-Skripsi
+                        </button>
+                    </form>
+
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">
+                        <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> 
+                        <span class="font-semibold text-slate-700">Info Akses Demo Cepat:</span> Belum punya akun Firebase? Klik tab <strong>"Pendaftaran Mandiri"</strong> untuk mendaftarkan akun Mahasiswa/Dosen baru secara langsung.
+                    </div>
+                </div>
+
+                <!-- FORM REGISTER -->
+                <div id="formRegisterContainer" class="p-6 sm:p-8 space-y-5 hidden">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-slate-800">Pendaftaran Akun Baru</h2>
+                        <p class="text-xs text-slate-500 mt-1">Pilih peran akun dan isi kelengkapan data diri Anda</p>
+                    </div>
+
+                    <!-- Role Switcher Radio Buttons -->
+                    <div class="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-2xl">
+                        <label class="cursor-pointer text-center">
+                            <input type="radio" name="regRole" value="mahasiswa" checked onchange="toggleRegRoleFields('mahasiswa')" class="peer sr-only">
+                            <div class="py-2 text-xs font-bold rounded-xl text-slate-600 peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm transition">
+                                <i class="fa-solid fa-user-graduate mr-1"></i> Mahasiswa
+                            </div>
+                        </label>
+                        <label class="cursor-pointer text-center">
+                            <input type="radio" name="regRole" value="dosen" onchange="toggleRegRoleFields('dosen')" class="peer sr-only">
+                            <div class="py-2 text-xs font-bold rounded-xl text-slate-600 peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:shadow-sm transition">
+                                <i class="fa-solid fa-user-tie mr-1"></i> Dosen Pembimbing
+                            </div>
+                        </label>
+                    </div>
+
+                    <form onsubmit="handleRegisterSubmit(event)" class="space-y-4 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+                                <input type="text" id="regName" required placeholder="Budi Santoso, S.Kom" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1" id="labelNIMNIP">NIM Mahasiswa</label>
+                                <input type="text" id="regIdentifier" required placeholder="210401088" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Program Studi (Prodi)</label>
+                            <select id="regProdi" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="Teknik Informatika">Teknik Informatika</option>
+                                <option value="Sistem Informasi">Sistem Informasi</option>
+                                <option value="Teknologi Informasi">Teknologi Informasi</option>
+                            </select>
+                        </div>
+
+                        <!-- Specific Fields: MAHASISWA -->
+                        <div id="fieldsMahasiswa" class="space-y-3">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Rencana Judul / Topik Skripsi</label>
+                                <input type="text" id="regJudul" placeholder="Contoh: Penerapan Machine Learning untuk Prediksi Kelulusan" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Dosen Pembimbing 1</label>
+                                    <select id="regAdvisor1" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">-- Pilih Dosen Utama --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Dosen Pembimbing 2</label>
+                                    <select id="regAdvisor2" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">-- Pilih Dosen Pendamping --</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Specific Fields: DOSEN -->
+                        <div id="fieldsDosen" class="space-y-3 hidden">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Gelar Akademik</label>
+                                    <input type="text" id="regGelar" placeholder="M.T. / M.Kom. / Ph.D" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Kuota Maks Bimbingan</label>
+                                    <input type="number" id="regQuota" value="10" min="1" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Email</label>
+                                <input type="email" id="regEmail" required placeholder="user@domain.com" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Password</label>
+                                <input type="password" id="regPassword" required minlength="6" placeholder="Min. 6 Karakter" class="w-full border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/25 transition mt-2">
+                            Daftar Akun Baru Sekarang
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUTHENTICATED DASHBOARD WRAPPER -->
+        <div id="viewDashboard" class="hidden flex flex-col md:flex-row gap-6">
+            <!-- SIDEBAR NAV -->
+            <aside class="w-full md:w-64 flex-shrink-0">
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm sticky top-20">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2">Menu Portal</div>
+                    <nav id="sidebarMenu" class="space-y-1">
+                        <!-- Dynamic Inject -->
+                    </nav>
+
+                    <hr class="my-4 border-slate-100">
+
+                    <div class="bg-blue-50/80 rounded-xl p-3 border border-blue-100 text-xs">
+                        <div class="flex items-center space-x-1.5 text-blue-700 font-semibold mb-1">
+                            <i class="fa-solid fa-bell"></i>
+                            <span>Pengumuman</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed text-[11px]">
+                            Batas penyerahan bab akhir gelombang 1: <strong class="text-blue-800">15 November 2026</strong>.
+                        </p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN WORKSPACE CONTENT -->
+            <main class="flex-1 min-w-0">
+                <!-- VIEW MAHASISWA -->
+                <div id="sectionMahasiswa" class="space-y-6 hidden">
+                    <!-- Banner Info Skripsi -->
+                    <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <div class="relative z-10 max-w-2xl">
+                            <span class="bg-white/20 text-white text-[10px] px-2.5 py-0.5 rounded-full font-semibold backdrop-blur-sm">Program Skripsi / Tugas Akhir</span>
+                            <h1 id="mhsTitleDisplay" class="text-xl sm:text-2xl font-extrabold mt-2 leading-snug">Judul Skripsi Belum Diatur</h1>
+                            <div class="text-blue-100 text-xs mt-3 flex flex-wrap gap-4">
+                                <span><i class="fa-solid fa-user-tie mr-1"></i> Pembimbing 1: <strong id="mhsAdvisor1Display">-</strong></span>
+                                <span><i class="fa-solid fa-user-tie mr-1"></i> Pembimbing 2: <strong id="mhsAdvisor2Display">-</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Tracker Card -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-base font-bold text-slate-800">Progres Capaian Skripsi</h2>
+                                <p class="text-xs text-slate-500">Status persetujuan bab berdasarkan hasil evaluasi dosen</p>
+                            </div>
+                            <div class="text-right">
+                                <span id="mhsProgressPercent" class="text-2xl font-extrabold text-blue-600">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden mb-6 flex">
+                            <div id="mhsProgressBarFill" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+
+                        <!-- Step Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+                            <div id="stepBab1" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+                                <div class="font-bold">Bab 1</div>
+                                <div class="text-[10px] text-slate-400">Pendahuluan</div>
+                            </div>
+                            <div id="stepBab2" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+                                <div class="font-bold">Bab 2</div>
+                                <div class="text-[10px] text-slate-400">Kajian Pustaka</div>
+                            </div>
+                            <div id="stepBab3" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+                                <div class="font-bold">Bab 3</div>
+                                <div class="text-[10px] text-slate-400">Metodologi</div>
+                            </div>
+                            <div id="stepBab4" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+                                <div class="font-bold">Bab 4</div>
+                                <div class="text-[10px] text-slate-400">Hasil & Pembahasan</div>
+                            </div>
+                            <div id="stepBab5" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+                                <div class="font-bold">Bab 5</div>
+                                <div class="text-[10px] text-slate-400">Kesimpulan</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <button onclick="openModal('modalSubmitDraft')" class="p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-500 hover:shadow-md transition text-left flex items-center space-x-3 group">
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition">
+                                <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-xs">Ajukan Draft Bimbingan</div>
+                                <div class="text-[10px] text-slate-400">Kirim bab baru untuk di-review</div>
+                            </div>
+                        </button>
+                        <button onclick="openModal('modalSchedule')" class="p-4 rounded-2xl bg-white border border-slate-200 hover:border-indigo-500 hover:shadow-md transition text-left flex items-center space-x-3 group">
+                            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition">
+                                <i class="fa-solid fa-calendar-plus text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-xs">Buat Janji Bimbingan</div>
+                                <div class="text-[10px] text-slate-400">Jadwalkan temu offline / online</div>
+                            </div>
+                        </button>
+                        <button onclick="printKartuBimbingan()" class="p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-left flex items-center space-x-3 group">
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
+                                <i class="fa-solid fa-print text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-xs">Cetak Kartu Bimbingan</div>
+                                <div class="text-[10px] text-slate-400">Generate PDF logbook resmi</div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Timeline & Chat Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-history text-blue-600"></i> Riwayat Pengajuan Bimbingan
+                            </h3>
+                            <div id="mhsHistoryList" class="space-y-3">
+                                <!-- Dynamic List -->
+                            </div>
+                        </div>
+
+                        <!-- Chat Widget -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col h-[420px]">
+                            <div class="border-b pb-2 mb-2 font-bold text-xs text-slate-800 flex items-center justify-between">
+                                <span><i class="fa-solid fa-comments text-blue-600 mr-1"></i> Pesan Singkat</span>
+                            </div>
+                            <div id="chatStream" class="flex-1 overflow-y-auto space-y-2.5 text-xs pr-1">
+                                <!-- Chat List -->
+                            </div>
+                            <form onsubmit="sendChatMessage(event)" class="pt-2 border-t flex gap-1.5 mt-2">
+                                <input type="text" id="chatInput" placeholder="Pesan singkat ke dosen..." class="flex-1 text-xs border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                                <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs hover:bg-blue-700 transition">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW DOSEN -->
+                <div id="sectionDosen" class="space-y-6 hidden">
+                    <!-- Stats Bar -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-[11px] text-slate-400 font-medium">Total Mahasiswa</div>
+                            <div id="dosenCountMhs" class="text-xl font-bold text-slate-800 mt-1">0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-[11px] text-slate-400 font-medium">Perlu Review</div>
+                            <div id="dosenCountPending" class="text-xl font-bold text-amber-600 mt-1">0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-[11px] text-slate-400 font-medium">Siap Sidang (Bab 5 ACC)</div>
+                            <div id="dosenCountReady" class="text-xl font-bold text-emerald-600 mt-1">0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="text-[11px] text-slate-400 font-medium">Janji Temu Menunggu</div>
+                            <div id="dosenCountSchedule" class="text-xl font-bold text-indigo-600 mt-1">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Table Draft Mahasiswa -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="font-bold text-slate-800 text-sm">Daftar Pengajuan Draft Mahasiswa</h2>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-400 font-semibold uppercase bg-slate-50">
+                                        <th class="py-2.5 px-3">Mahasiswa</th>
+                                        <th class="py-2.5 px-3">Bab & Topik</th>
+                                        <th class="py-2.5 px-3">Tanggal</th>
+                                        <th class="py-2.5 px-3">Status</th>
+                                        <th class="py-2.5 px-3 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableDosenDrafts" class="divide-y divide-slate-100">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pending Schedule Requests -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="font-bold text-slate-800 text-sm mb-3">Permintaan Jadwal Bimbingan</h3>
+                        <div id="dosenScheduleList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- Dynamic -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW KAPRODI / COORDINATOR -->
+                <div id="sectionKaprodi" class="space-y-6 hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <h2 class="text-lg font-bold text-slate-800 mb-1">Dashboard Monitoring Skripsi Program Studi</h2>
+                        <p class="text-xs text-slate-500 mb-6">Rekapitulasi progres mahasiswa dan beban pembimbingan dosen</p>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                            <div class="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+                                <div class="text-xs text-blue-600 font-semibold">Total Mahasiswa Terdaftar</div>
+                                <div id="kaprodiTotalMhs" class="text-2xl font-black text-blue-900 mt-1">0</div>
+                            </div>
+                            <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                                <div class="text-xs text-indigo-600 font-semibold">Total Dosen Pembimbing</div>
+                                <div id="kaprodiTotalDosen" class="text-2xl font-black text-indigo-900 mt-1">0</div>
+                            </div>
+                            <div class="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                                <div class="text-xs text-emerald-600 font-semibold">Lulus Bimbingan (ACC Bab 5)</div>
+                                <div id="kaprodiTotalLulus" class="text-2xl font-black text-emerald-900 mt-1">0</div>
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-200 rounded-2xl p-4">
+                            <h3 class="font-bold text-xs uppercase text-slate-400 mb-3">Daftar Dosen Pembimbing & Beban Kuota</h3>
+                            <div id="kaprodiDosenList" class="space-y-3 text-xs">
+                                <!-- Dynamic -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL: SUBMIT DRAFT (MAHASISWA) -->
+    <div id="modalSubmitDraft" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800">Ajukan Draft Bimbingan Baru</h3>
+                <button onclick="closeModal('modalSubmitDraft')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleDraftSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Bab Skripsi</label>
+                    <select id="draftBab" class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Bab 1">Bab 1 - Pendahuluan</option>
+                        <option value="Bab 2">Bab 2 - Landasan Teori</option>
+                        <option value="Bab 3">Bab 3 - Metodologi</option>
+                        <option value="Bab 4">Bab 4 - Hasil & Pembahasan</option>
+                        <option value="Bab 5">Bab 5 - Penutup & Kesimpulan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Topik Focus / Pokok Pembahasan</label>
+                    <input type="text" id="draftTopik" required placeholder="Contoh: Revisi Diagram Use Case & Pengujian Dataset" class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Link Dokumen Draft (Google Drive / Cloud Link)</label>
+                    <input type="url" id="draftFileUrl" required placeholder="https://drive.google.com/file/d/..." class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Catatan Tambahan untuk Dosen</label>
+                    <textarea id="draftCatatan" rows="3" placeholder="Deskripsikan bagian yang ingin ditinjau..." class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" onclick="closeModal('modalSubmitDraft')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold">Kirim Draft</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: REVIEW DRAFT (DOSEN) -->
+    <div id="modalReviewDraft" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800">Review Draft Bimbingan</h3>
+                <button onclick="closeModal('modalReviewDraft')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleReviewSubmit(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="reviewDraftId">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Keputusan Status</label>
+                    <select id="reviewStatus" class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Disetujui">Disetujui (ACC)</option>
+                        <option value="Perlu Revisi">Perlu Revisi</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Catatan / Feedback Dosen</label>
+                    <textarea id="reviewFeedback" rows="4" required placeholder="Tuliskan catatan perbaikan atau petunjuk kelanjutan..." class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" onclick="closeModal('modalReviewDraft')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold">Simpan Evaluasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: JANJI BIMBINGAN (MAHASISWA) -->
+    <div id="modalSchedule" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800">Ajukan Janji Bimbingan</h3>
+                <button onclick="closeModal('modalSchedule')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleScheduleSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tanggal & Jam</label>
+                    <input type="datetime-local" id="schedDatetime" required class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Mode Bimbingan</label>
+                    <select id="schedMode" class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Tatap Muka / Ruang Dosen">Tatap Muka (Ruang Dosen)</option>
+                        <option value="Online / Zoom Meeting">Online (Zoom Meeting)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Agenda Pembahasan</label>
+                    <textarea id="schedAgenda" rows="2" placeholder="Diskusi bab 4 dan pengujian dataset..." class="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" onclick="closeModal('modalSchedule')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold">Kirim Janji</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: FIREBASE CONFIG SETUP -->
+    <div id="modalFirebaseConfig" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-fire text-amber-500 text-xl"></i>
+                    <h3 class="text-base font-bold text-slate-800">Pengaturan Firebase Backend</h3>
+                </div>
+                <button onclick="closeModal('modalFirebaseConfig')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Tempelkan konfigurasi JSON Firebase Project Anda di bawah ini agar data pengguna, bimbingan, dan obrolan tersimpan secara langsung di cloud Firestore & Firebase Auth.
+            </p>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Firebase Config Object / Keys JSON</label>
+                    <textarea id="firebaseConfigInput" rows="7" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "app.firebaseapp.com",
+  "projectId": "app-id",
+  "storageBucket": "app.appspot.com",
+  "messagingSenderId": "12345...",
+  "appId": "1:12345..."
+}' class="w-full border border-slate-200 rounded-xl p-3 font-mono text-[11px] outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t">
+                <button onclick="clearFirebaseConfig()" class="text-xs text-rose-600 hover:underline">Hapus / Reset Config</button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeModal('modalFirebaseConfig')" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs rounded-xl font-semibold">Tutup</button>
+                    <button type="button" onclick="saveFirebaseConfig()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs rounded-xl font-semibold">Simpan & Hubungkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRINT VIEW AREA (PRINT-ONLY LOGBOOK CARD) -->
+    <div class="print-only p-8 bg-white max-w-4xl mx-auto text-black">
+        <div class="text-center border-b-2 border-black pb-4 mb-6">
+            <h1 class="text-lg font-bold uppercase tracking-wide">KARTU BUKTI BIMBINGAN SKRIPSI / TUGAS AKHIR</h1>
+            <p class="text-xs">FAKULTAS ILMU KOMPUTER & TEKNOLOGI INFORMASI</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 text-xs mb-6 border p-4 rounded">
+            <div>
+                <p><strong>Nama Mahasiswa:</strong> <span id="printMhsName">-</span></p>
+                <p><strong>NIM:</strong> <span id="printMhsNIM">-</span></p>
+                <p><strong>Program Studi:</strong> <span id="printMhsProdi">-</span></p>
+            </div>
+            <div>
+                <p><strong>Dosen Pembimbing I:</strong> <span id="printMhsAdv1">-</span></p>
+                <p><strong>Dosen Pembimbing II:</strong> <span id="printMhsAdv2">-</span></p>
+                <p><strong>Judul Skripsi:</strong> <span id="printMhsTitle">-</span></p>
+            </div>
+        </div>
+
+        <table class="w-full text-xs border-collapse border border-black mb-8">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border border-black p-2 w-8">No</th>
+                    <th class="border border-black p-2 w-24">Tanggal</th>
+                    <th class="border border-black p-2 w-16">Bab</th>
+                    <th class="border border-black p-2">Pokok Pembahasan & Catatan</th>
+                    <th class="border border-black p-2 w-20">Status</th>
+                    <th class="border border-black p-2 w-20">Paraf</th>
+                </tr>
+            </thead>
+            <tbody id="printLogTable">
+                <!-- Injected via JS -->
+            </tbody>
+        </table>
+
+        <div class="flex justify-between text-xs mt-12">
+            <div class="text-center w-48">
+                <p>Mahasiswa,</p>
+                <div class="h-16"></div>
+                <p id="printSignMhsName" class="font-bold underline">-</p>
+            </div>
+            <div class="text-center w-48">
+                <p>Mengetahui,<br>Dosen Pembimbing I</p>
+                <div class="h-16"></div>
+                <p id="printSignAdvName" class="font-bold underline">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & STATE ENGINE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State & Storage Key
+        const STORAGE_USERS = 'SIM_SKRIPSI_USERS_DB';
+        const STORAGE_DRAFTS = 'SIM_SKRIPSI_DRAFTS_DB';
+        const STORAGE_SCHEDS = 'SIM_SKRIPSI_SCHEDS_DB';
+        const STORAGE_CHATS = 'SIM_SKRIPSI_CHATS_DB';
+        const STORAGE_CONFIG = 'SIM_SKRIPSI_FIREBASE_CFG';
+
+        let app, auth, db;
+        let isFirebaseActive = false;
+        let currentUser = null;
+
+        // Window Scope Helpers
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+        
+        // Initialize Application Context
+        window.addEventListener('DOMContentLoaded', async () => {
+            initFirebaseIfAvailable();
+            populateAdvisorDropdowns();
+
+            // Check logged in user state
+            const savedUser = localStorage.getItem('SIM_SKRIPSI_LOGGED_USER');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
+            } else {
+                showAuthView();
+            }
+        });
+
+        // Initialize Firebase Backend
+        function initFirebaseIfAvailable() {
+            const storedCfg = localStorage.getItem(STORAGE_CONFIG);
+            if (storedCfg) {
+                try {
+                    const config = JSON.parse(storedCfg);
+                    app = initializeApp(config);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    isFirebaseActive = true;
+
+                    document.getElementById('envBadge').className = 'hidden sm:inline-block ml-2 text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 font-semibold rounded-full border border-emerald-200';
+                    document.getElementById('envBadge').innerHTML = '<i class="fa-solid fa-cloud mr-1"></i> Firebase Live Mode';
+                    document.getElementById('firebaseConfigInput').value = storedCfg;
+                } catch (e) {
+                    console.error("Firebase init error:", e);
+                }
+            }
+        }
+
+        // Firebase Config Operations
+        window.saveFirebaseConfig = () => {
+            const raw = document.getElementById('firebaseConfigInput').value.trim();
+            try {
+                JSON.parse(raw);
+                localStorage.setItem(STORAGE_CONFIG, raw);
+                showToast('Konfigurasi Firebase berhasil disimpan! Memuat ulang...', 'success');
+                setTimeout(() => location.reload(), 1200);
+            } catch (e) {
+                showToast('Format JSON Config tidak valid!', 'error');
+            }
+        };
+
+        window.clearFirebaseConfig = () => {
+            localStorage.removeItem(STORAGE_CONFIG);
+            showToast('Konfigurasi Firebase dihapus. Kembali ke Local Storage Mode.', 'info');
+            setTimeout(() => location.reload(), 1200);
+        };
+
+        // UI Auth Tabs
+        window.switchAuthTab = (tab) => {
+            const btnLogin = document.getElementById('btnTabLogin');
+            const btnRegister = document.getElementById('btnTabRegister');
+            const formLogin = document.getElementById('formLoginContainer');
+            const formRegister = document.getElementById('formRegisterContainer');
+
+            if (tab === 'login') {
+                btnLogin.className = 'flex-1 py-2.5 text-xs font-bold rounded-2xl bg-white text-blue-700 shadow-sm transition';
+                btnRegister.className = 'flex-1 py-2.5 text-xs font-bold rounded-2xl text-slate-500 hover:text-slate-800 transition';
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            } else {
+                btnRegister.className = 'flex-1 py-2.5 text-xs font-bold rounded-2xl bg-white text-blue-700 shadow-sm transition';
+                btnLogin.className = 'flex-1 py-2.5 text-xs font-bold rounded-2xl text-slate-500 hover:text-slate-800 transition';
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+                populateAdvisorDropdowns();
+            }
+        };
+
+        window.toggleRegRoleFields = (role) => {
+            const fieldsMhs = document.getElementById('fieldsMahasiswa');
+            const fieldsDosen = document.getElementById('fieldsDosen');
+            const labelNIMNIP = document.getElementById('labelNIMNIP');
+
+            if (role === 'mahasiswa') {
+                fieldsMhs.classList.remove('hidden');
+                fieldsDosen.classList.add('hidden');
+                labelNIMNIP.innerText = 'NIM Mahasiswa';
+            } else {
+                fieldsDosen.classList.remove('hidden');
+                fieldsMhs.classList.add('hidden');
+                labelNIMNIP.innerText = 'NIP / NIDN Dosen';
+            }
+        };
+
+        // Populate Advisor Dropdown Options
+        async function populateAdvisorDropdowns() {
+            const adv1 = document.getElementById('regAdvisor1');
+            const adv2 = document.getElementById('regAdvisor2');
+            if (!adv1 || !adv2) return;
+
+            let lecturers = [];
+
+            if (isFirebaseActive && db) {
+                try {
+                    const q = query(collection(db, 'users'), where('role', '==', 'dosen'));
+                    const snap = await getDocs(q);
+                    snap.forEach(d => lecturers.push(d.data()));
+                } catch (e) { console.error(e); }
+            } else {
+                const users = JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]');
+                lecturers = users.filter(u => u.role === 'dosen');
+            }
+
+            let options = '<option value="">-- Pilih Dosen --</option>';
+            lecturers.forEach(l => {
+                options += `<option value="${l.name}">${l.name} (${l.gelar || ''})</option>`;
+            });
+
+            adv1.innerHTML = options;
+            adv2.innerHTML = options;
+        }
+
+        // Handle Registration
+        window.handleRegisterSubmit = async (e) => {
+            e.preventDefault();
+            const role = document.querySelector('input[name="regRole"]:checked').value;
+            const name = document.getElementById('regName').value.trim();
+            const identifier = document.getElementById('regIdentifier').value.trim();
+            const prodi = document.getElementById('regProdi').value;
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            const newUser = {
+                uid: 'usr_' + Date.now(),
+                name,
+                identifier,
+                prodi,
+                email,
+                role,
+                createdAt: new Date().toISOString()
+            };
+
+            if (role === 'mahasiswa') {
+                newUser.judul = document.getElementById('regJudul').value.trim() || 'Judul Belum Diisi';
+                newUser.advisor1 = document.getElementById('regAdvisor1').value;
+                newUser.advisor2 = document.getElementById('regAdvisor2').value;
+            } else {
+                newUser.gelar = document.getElementById('regGelar').value.trim();
+                newUser.quota = parseInt(document.getElementById('regQuota').value) || 10;
+            }
+
+            if (isFirebaseActive && auth && db) {
+                try {
+                    const res = await createUserWithEmailAndPassword(auth, email, password);
+                    newUser.uid = res.user.uid;
+                    await setDoc(doc(db, 'users', res.user.uid), newUser);
+                } catch (err) {
+                    showToast('Gagal daftar Firebase: ' + err.message, 'error');
+                    return;
+                }
+            } else {
+                const users = JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]');
+                if (users.find(u => u.email === email)) {
+                    showToast('Email sudah terdaftar!', 'error');
+                    return;
+                }
+                users.push({ ...newUser, password });
+                localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+            }
+
+            showToast('Pendaftaran Berhasil! Silakan Login.', 'success');
+            switchAuthTab('login');
+            document.getElementById('loginEmail').value = email;
+        };
+
+        // Handle Login
+        window.handleLoginSubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            let authenticatedUser = null;
+
+            if (isFirebaseActive && auth && db) {
+                try {
+                    const res = await signInWithEmailAndPassword(auth, email, password);
+                    const userDoc = await getDoc(doc(db, 'users', res.user.uid));
+                    if (userDoc.exists()) {
+                        authenticatedUser = userDoc.data();
+                    }
+                } catch (err) {
+                    showToast('Login gagal: Email / Password salah', 'error');
+                    return;
+                }
+            } else {
+                const users = JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]');
+                authenticatedUser = users.find(u => u.email === email && u.password === password);
+            }
+
+            if (!authenticatedUser) {
+                showToast('Akun tidak ditemukan. Silakan daftar lebih dulu.', 'error');
+                return;
+            }
+
+            currentUser = authenticatedUser;
+            localStorage.setItem('SIM_SKRIPSI_LOGGED_USER', JSON.stringify(currentUser));
+            showToast(`Selamat datang, ${currentUser.name}!`, 'success');
+            showDashboard();
+        };
+
+        // Logout
+        window.handleLogout = () => {
+            if (isFirebaseActive && auth) signOut(auth);
+            currentUser = null;
+            localStorage.removeItem('SIM_SKRIPSI_LOGGED_USER');
+            showAuthView();
+            showToast('Berhasil keluar sistem', 'info');
+        };
+
+        // View Management
+        function showAuthView() {
+            document.getElementById('viewAuth').classList.remove('hidden');
+            document.getElementById('viewDashboard').classList.add('hidden');
+            document.getElementById('navUserProfile').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('viewAuth').classList.add('hidden');
+            document.getElementById('viewDashboard').classList.remove('hidden');
+            document.getElementById('navUserProfile').classList.remove('hidden');
+
+            document.getElementById('navUserName').innerText = currentUser.name;
+            document.getElementById('navUserRole').innerText = currentUser.role === 'mahasiswa' ? `Mahasiswa (${currentUser.identifier})` : currentUser.role;
+
+            renderSidebarMenu();
+            renderRoleSection();
+        }
+
+        function renderSidebarMenu() {
+            const menu = document.getElementById('sidebarMenu');
+            let html = '';
+
+            if (currentUser.role === 'mahasiswa') {
+                html = `
+                    <a href="#" class="flex items-center px-3 py-2 text-xs font-semibold rounded-xl bg-blue-50 text-blue-700">
+                        <i class="fa-solid fa-chart-line w-6"></i> Progres Skripsi
+                    </a>
+                    <a href="#" onclick="openModal('modalSubmitDraft')" class="flex items-center px-3 py-2 text-xs font-medium text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-upload w-6"></i> Ajukan Draft Bab
+                    </a>
+                    <a href="#" onclick="openModal('modalSchedule')" class="flex items-center px-3 py-2 text-xs font-medium text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-calendar-plus w-6"></i> Janji Bimbingan
+                    </a>
+                    <a href="#" onclick="printKartuBimbingan()" class="flex items-center px-3 py-2 text-xs font-medium text-slate-600 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-print w-6"></i> Cetak Kartu Logbook
+                    </a>
+                `;
+            } else if (currentUser.role === 'dosen') {
+                html = `
+                    <a href="#" class="flex items-center px-3 py-2 text-xs font-semibold rounded-xl bg-blue-50 text-blue-700">
+                        <i class="fa-solid fa-file-signature w-6"></i> Pengajuan Bimbingan
+                    </a>
+                `;
+            } else {
+                html = `
+                    <a href="#" class="flex items-center px-3 py-2 text-xs font-semibold rounded-xl bg-blue-50 text-blue-700">
+                        <i class="fa-solid fa-chart-pie w-6"></i> Overview Kaprodi
+                    </a>
+                `;
+            }
+            menu.innerHTML = html;
+        }
+
+        function renderRoleSection() {
+            document.getElementById('sectionMahasiswa').classList.add('hidden');
+            document.getElementById('sectionDosen').classList.add('hidden');
+            document.getElementById('sectionKaprodi').classList.add('hidden');
+
+            if (currentUser.role === 'mahasiswa') {
+                document.getElementById('sectionMahasiswa').classList.remove('hidden');
+                document.getElementById('mhsTitleDisplay').innerText = currentUser.judul || 'Judul Belum Diisi';
+                document.getElementById('mhsAdvisor1Display').innerText = currentUser.advisor1 || 'Belum Ditentukan';
+                document.getElementById('mhsAdvisor2Display').innerText = currentUser.advisor2 || 'Belum Ditentukan';
+                loadMahasiswaData();
+            } else if (currentUser.role === 'dosen') {
+                document.getElementById('sectionDosen').classList.remove('hidden');
+                loadDosenData();
+            } else {
+                document.getElementById('sectionKaprodi').classList.remove('hidden');
+                loadKaprodiData();
+            }
+        }
+
+        // MAHASISWA LOGIC
+        async function loadMahasiswaData() {
+            let drafts = [];
+            let chats = [];
+
+            if (isFirebaseActive && db) {
+                const q = query(collection(db, 'drafts'), where('mhsUid', '==', currentUser.uid));
+                const snap = await getDocs(q);
+                snap.forEach(d => drafts.push({ id: d.id, ...d.data() }));
+
+                const qChat = query(collection(db, 'chats'), where('mhsUid', '==', currentUser.uid));
+                const snapChat = await getDocs(qChat);
+                snapChat.forEach(c => chats.push(c.data()));
+            } else {
+                const allDrafts = JSON.parse(localStorage.getItem(STORAGE_DRAFTS) || '[]');
+                drafts = allDrafts.filter(d => d.mhsUid === currentUser.uid);
+
+                const allChats = JSON.parse(localStorage.getItem(STORAGE_CHATS) || '[]');
+                chats = allChats.filter(c => c.mhsUid === currentUser.uid);
+            }
+
+            // Render Progress Steps
+            const accBabs = drafts.filter(d => d.status === 'Disetujui').map(d => d.bab);
+            const percent = Math.min(100, accBabs.length * 20);
+
+            document.getElementById('mhsProgressPercent').innerText = `${percent}%`;
+            document.getElementById('mhsProgressBarFill').style.width = `${percent}%`;
+
+            ['Bab 1', 'Bab 2', 'Bab 3', 'Bab 4', 'Bab 5'].forEach((bab, idx) => {
+                const stepEl = document.getElementById(`stepBab${idx+1}`);
+                if (accBabs.includes(bab)) {
+                    stepEl.className = 'p-2.5 rounded-xl border border-green-300 bg-green-50 text-green-700 font-bold';
+                } else {
+                    stepEl.className = 'p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-500';
+                }
+            });
+
+            // Render History
+            const historyList = document.getElementById('mhsHistoryList');
+            if (drafts.length === 0) {
+                historyList.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">Belum ada riwayat pengajuan draft bimbingan.</div>`;
+            } else {
+                historyList.innerHTML = drafts.slice().reverse().map(d => `
+                    <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50/50 space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-xs text-blue-700">${d.bab}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${d.status === 'Disetujui' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${d.status}</span>
+                        </div>
+                        <div class="font-semibold text-xs text-slate-800">${d.topik}</div>
+                        <p class="text-[11px] text-slate-500 bg-white p-2 rounded border border-slate-100">Catatan: ${d.feedback || d.catatan || 'Menunggu tanggapan dosen'}</p>
+                        <div class="text-[10px] text-slate-400 flex justify-between pt-1">
+                            <span>${d.tanggal}</span>
+                            <a href="${d.fileUrl}" target="_blank" class="text-blue-600 underline"><i class="fa-solid fa-paperclip"></i> Lihat File Link</a>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderChatStream(chats);
+        }
+
+        // DRAFT SUBMISSION
+        window.handleDraftSubmit = async (e) => {
+            e.preventDefault();
+            const bab = document.getElementById('draftBab').value;
+            const topik = document.getElementById('draftTopik').value.trim();
+            const fileUrl = document.getElementById('draftFileUrl').value.trim();
+            const catatan = document.getElementById('draftCatatan').value.trim();
+
+            const newDraft = {
+                mhsUid: currentUser.uid,
+                mhsName: currentUser.name,
+                mhsNIM: currentUser.identifier,
+                advisor1: currentUser.advisor1,
+                bab,
+                topik,
+                fileUrl,
+                catatan,
+                status: 'Pending Review',
+                tanggal: new Date().toLocaleDateString('id-ID')
+            };
+
+            if (isFirebaseActive && db) {
+                await addDoc(collection(db, 'drafts'), newDraft);
+            } else {
+                const drafts = JSON.parse(localStorage.getItem(STORAGE_DRAFTS) || '[]');
+                drafts.push({ id: 'drf_' + Date.now(), ...newDraft });
+                localStorage.setItem(STORAGE_DRAFTS, JSON.stringify(drafts));
+            }
+
+            closeModal('modalSubmitDraft');
+            showToast('Draft bimbingan berhasil diajukan!', 'success');
+            loadMahasiswaData();
+        };
+
+        // DOSEN LOGIC
+        async function loadDosenData() {
+            let drafts = [];
+            let scheds = [];
+
+            if (isFirebaseActive && db) {
+                const q = query(collection(db, 'drafts'), where('advisor1', '==', currentUser.name));
+                const snap = await getDocs(q);
+                snap.forEach(d => drafts.push({ id: d.id, ...d.data() }));
+
+                const qSched = query(collection(db, 'schedules'), where('advisorName', '==', currentUser.name));
+                const snapSched = await getDocs(qSched);
+                snapSched.forEach(s => scheds.push({ id: s.id, ...s.data() }));
+            } else {
+                const allDrafts = JSON.parse(localStorage.getItem(STORAGE_DRAFTS) || '[]');
+                drafts = allDrafts.filter(d => d.advisor1 === currentUser.name);
+
+                const allScheds = JSON.parse(localStorage.getItem(STORAGE_SCHEDS) || '[]');
+                scheds = allScheds.filter(s => s.advisorName === currentUser.name);
+            }
+
+            // Stats
+            const uniqueMhs = [...new Set(drafts.map(d => d.mhsUid))];
+            const pendingCount = drafts.filter(d => d.status === 'Pending Review').length;
+            const readyCount = drafts.filter(d => d.bab === 'Bab 5' && d.status === 'Disetujui').length;
+
+            document.getElementById('dosenCountMhs').innerText = uniqueMhs.length;
+            document.getElementById('dosenCountPending').innerText = pendingCount;
+            document.getElementById('dosenCountReady').innerText = readyCount;
+            document.getElementById('dosenCountSchedule').innerText = scheds.length;
+
+            // Render Draft Table
+            const tbody = document.getElementById('tableDosenDrafts');
+            if (drafts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada pengajuan draft bimbingan masuk.</td></tr>`;
+            } else {
+                tbody.innerHTML = drafts.map(d => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2.5 px-3">
+                            <div class="font-bold text-slate-800">${d.mhsName}</div>
+                            <div class="text-[10px] text-slate-400">NIM: ${d.mhsNIM}</div>
+                        </td>
+                        <td class="py-2.5 px-3">
+                            <span class="font-bold text-blue-600">${d.bab}</span> - ${d.topik}
+                        </td>
+                        <td class="py-2.5 px-3 text-slate-500">${d.tanggal}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${d.status === 'Disetujui' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${d.status}</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-right">
+                            <button onclick="openReviewModal('${d.id}')" class="px-2.5 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-[11px]">Review</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Render Schedule Requests
+            const schedList = document.getElementById('dosenScheduleList');
+            if (scheds.length === 0) {
+                schedList.innerHTML = `<div class="text-slate-400 text-xs py-2">Tidak ada janji bimbingan masuk.</div>`;
+            } else {
+                schedList.innerHTML = scheds.map(s => `
+                    <div class="p-3 border border-slate-200 rounded-xl bg-slate-50 flex justify-between items-center text-xs">
+                        <div>
+                            <div class="font-bold text-slate-800">${s.mhsName}</div>
+                            <div class="text-slate-500 text-[10px]"><i class="fa-regular fa-clock"></i> ${s.datetime} (${s.mode})</div>
+                            <div class="italic text-slate-600 text-[11px] mt-0.5">"${s.agenda}"</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        window.openReviewModal = (draftId) => {
+            document.getElementById('reviewDraftId').value = draftId;
+            openModal('modalReviewDraft');
+        };
+
+        window.handleReviewSubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('reviewDraftId').value;
+            const status = document.getElementById('reviewStatus').value;
+            const feedback = document.getElementById('reviewFeedback').value.trim();
+
+            if (isFirebaseActive && db) {
+                await setDoc(doc(db, 'drafts', id), { status, feedback }, { merge: true });
+            } else {
+                const drafts = JSON.parse(localStorage.getItem(STORAGE_DRAFTS) || '[]');
+                const target = drafts.find(d => d.id === id);
+                if (target) {
+                    target.status = status;
+                    target.feedback = feedback;
+                    localStorage.setItem(STORAGE_DRAFTS, JSON.stringify(drafts));
+                }
+            }
+
+            closeModal('modalReviewDraft');
+            showToast('Evaluasi draft berhasil disimpan!', 'success');
+            loadDosenData();
+        };
+
+        // SCHEDULE SUBMISSION
+        window.handleScheduleSubmit = async (e) => {
+            e.preventDefault();
+            const datetime = document.getElementById('schedDatetime').value;
+            const mode = document.getElementById('schedMode').value;
+            const agenda = document.getElementById('schedAgenda').value.trim();
+
+            const newSched = {
+                mhsUid: currentUser.uid,
+                mhsName: currentUser.name,
+                advisorName: currentUser.advisor1,
+                datetime: datetime.replace('T', ' '),
+                mode,
+                agenda
+            };
+
+            if (isFirebaseActive && db) {
+                await addDoc(collection(db, 'schedules'), newSched);
+            } else {
+                const scheds = JSON.parse(localStorage.getItem(STORAGE_SCHEDS) || '[]');
+                scheds.push({ id: 'sch_' + Date.now(), ...newSched });
+                localStorage.setItem(STORAGE_SCHEDS, JSON.stringify(scheds));
+            }
+
+            closeModal('modalSchedule');
+            showToast('Pengajuan janji bimbingan berhasil dikirim!', 'success');
+        };
+
+        // KAPRODI DATA
+        async function loadKaprodiData() {
+            let users = [];
+            let drafts = [];
+
+            if (isFirebaseActive && db) {
+                const uSnap = await getDocs(collection(db, 'users'));
+                uSnap.forEach(u => users.push(u.data()));
+                const dSnap = await getDocs(collection(db, 'drafts'));
+                dSnap.forEach(d => drafts.push(d.data()));
+            } else {
+                users = JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]');
+                drafts = JSON.parse(localStorage.getItem(STORAGE_DRAFTS) || '[]');
+            }
+
+            const mhsList = users.filter(u => u.role === 'mahasiswa');
+            const dosenList = users.filter(u => u.role === 'dosen');
+            const graduatedMhs = drafts.filter(d => d.bab === 'Bab 5' && d.status === 'Disetujui');
+
+            document.getElementById('kaprodiTotalMhs').innerText = mhsList.length;
+            document.getElementById('kaprodiTotalDosen').innerText = dosenList.length;
+            document.getElementById('kaprodiTotalLulus').innerText = graduatedMhs.length;
+
+            const listContainer = document.getElementById('kaprodiDosenList');
+            if (dosenList.length === 0) {
+                listContainer.innerHTML = `<div class="text-slate-400">Belum ada Dosen Pembimbing yang mendaftar.</div>`;
+            } else {
+                listContainer.innerHTML = dosenList.map(d => {
+                    const countAdv = mhsList.filter(m => m.advisor1 === d.name).length;
+                    return `
+                        <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100">
+                            <div>
+                                <div class="font-bold text-slate-800">${d.name} (${d.gelar || ''})</div>
+                                <div class="text-[10px] text-slate-400">NIP/NIDN: ${d.identifier}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-bold text-blue-600">${countAdv} / ${d.quota || 10}</span>
+                                <span class="text-[10px] text-slate-400 block">Mahasiswa Bimbingan</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // CHAT ENGINE
+        function renderChatStream(chats) {
+            const stream = document.getElementById('chatStream');
+            if (chats.length === 0) {
+                stream.innerHTML = `<div class="text-center text-slate-400 py-8 text-[11px]">Belum ada pesan obrolan.</div>`;
+                return;
+            }
+
+            stream.innerHTML = chats.map(c => {
+                const isMe = c.senderUid === currentUser.uid;
+                return `
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[85%] p-2 rounded-xl text-xs ${isMe ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800'} shadow-sm">
+                            <p>${c.text}</p>
+                            <span class="text-[9px] block text-right mt-0.5 ${isMe ? 'text-blue-200' : 'text-slate-400'}">${c.time}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+        window.sendChatMessage = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const now = new Date();
+            const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            const newMsg = {
+                mhsUid: currentUser.uid,
+                senderUid: currentUser.uid,
+                text,
+                time
+            };
+
+            if (isFirebaseActive && db) {
+                await addDoc(collection(db, 'chats'), newMsg);
+            } else {
+                const chats = JSON.parse(localStorage.getItem(STORAGE_CHATS) || '[]');
+                chats.push(newMsg);
+                localStorage.setItem(STORAGE_CHATS, JSON.stringify(chats));
+            }
+
+            input.value = '';
+            loadMahasiswaData();
+        };
+
+        // PRINT OFFICIAL KARTU BIMBINGAN
+        window.printKartuBimbingan = async () => {
+            document.getElementById('printMhsName').innerText = currentUser.name;
+            document.getElementById('printMhsNIM').innerText = currentUser.identifier;
+            document.getElementById('printMhsProdi').innerText = currentUser.prodi || 'Teknik Informatika';
+            document.getElementById('printMhsAdv1').innerText = currentUser.advisor1 || '-';
+            document.getElementById('printMhsAdv2').innerText = currentUser.advisor2 || '-';
+            document.getElementById('printMhsTitle').innerText = currentUser.judul || '-';
+
+            document.getElementById('printSignMhsName').innerText = currentUser.name;
+            document.getElementById('printSignAdvName').innerText = currentUser.advisor1 || 'Dosen Pembimbing';
+
+            let drafts = [];
+            if (isFirebaseActive && db) {
+                const q = query(collection(db, 'drafts'), where('mhsUid', '==', currentUser.uid));
+                const snap = await getDocs(q);
+                snap.forEach(d => drafts.push(d.data()));
+            } else {
+                const allDrafts = JSON.parse(localStorage.getItem(STORAGE_DRAFTS) || '[]');
+                drafts = allDrafts.filter(d => d.mhsUid === currentUser.uid);
+            }
+
+            const printTable = document.getElementById('printLogTable');
+            if (drafts.length === 0) {
+                printTable.innerHTML = `<tr><td colspan="6" class="text-center p-4 border border-black">Belum ada riwayat bimbingan.</td></tr>`;
+            } else {
+                printTable.innerHTML = drafts.map((d, i) => `
+                    <tr>
+                        <td class="border border-black p-2 text-center">${i + 1}</td>
+                        <td class="border border-black p-2">${d.tanggal}</td>
+                        <td class="border border-black p-2 font-bold">${d.bab}</td>
+                        <td class="border border-black p-2">
+                            <strong>${d.topik}</strong><br>
+                            <em>Catatan: ${d.feedback || d.catatan || '-'}</em>
+                        </td>
+                        <td class="border border-black p-2 text-center font-bold">${d.status}</td>
+                        <td class="border border-black p-2 text-center text-[10px] uppercase font-bold">[Paraf Valid]</td>
+                    </tr>
+                `).join('');
+            }
+
+            window.print();
+        };
+
+        // TOAST NOTIFIER
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800 text-white';
+            if (type === 'success') bg = 'bg-emerald-600 text-white';
+            if (type === 'error') bg = 'bg-rose-600 text-white';
+
+            toast.className = `${bg} px-4 py-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 transform translate-x-full`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('translate-x-full'), 50);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
